@@ -1,0 +1,20 @@
+<!ENTITY % bigbook   "IGNORE">
+<!ENTITY % smallbook "INCLUDE">
+<!ENTITY % data "">
+
+<!ELEMENT bookList (book)+>
+
+<![%smallbook;[
+<!ELEMENT book (id,title,author)>
+]]>
+
+<![%bigbook;[
+<!ELEMENT book (id,title,author,isbn,year,publisher)>
+]]>
+
+<!ELEMENT id (#PCDATA)>
+<!ELEMENT title (#PCDATA)>
+<!ELEMENT author (#PCDATA)>
+<!ELEMENT isbn (#PCDATA)>
+<!ELEMENT year (#PCDATA)>
+<!ELEMENT publisher (#PCDATA)>
