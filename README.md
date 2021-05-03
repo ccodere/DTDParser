@@ -1,6 +1,6 @@
 # Introduction to DTD Parser
  
-The DTD Parser is a set of Java packages for exploring DTDs. For example, it could be used by software that generates database schema or Java classes from a DTD created by Ronald Bourret and which now loosely maintained by Carl Eric Codere.
+The DTD Parser is a set of Java packages for exploring DTDs. For example, it could be used by software that generates database schema or Java classes from a DTD created by Ronald Bourret and which is now loosely maintained by Carl Eric Codere.
 
 # System Requirements
 
