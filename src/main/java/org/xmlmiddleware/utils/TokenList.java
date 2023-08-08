@@ -27,7 +27,6 @@ import java.util.*;
  *
  * @author Ronald Bourret, 1998-9, 2001
  * @version 2.0
- * @see InvertedTokenList
  */
 
 public class TokenList

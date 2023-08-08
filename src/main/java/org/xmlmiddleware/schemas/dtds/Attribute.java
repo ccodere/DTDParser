@@ -78,10 +78,10 @@ public class Attribute
    /** Attribute is optional, no default. Corresponds to #IMPLIED. */
    public static final int REQUIRED_OPTIONAL = 2;
 
-   /** Attribute has a fixed default. Corresponds to #FIXED "&lt;default>". */
+   /** Attribute has a fixed default. Corresponds to #FIXED "&lt;default&gt;". */
    public static final int REQUIRED_FIXED = 3;
 
-   /** Attribute is optional and has a default. Corresponds to "&lt;default>". */
+   /** Attribute is optional and has a default. Corresponds to "&lt;default&gt;". */
    public static final int REQUIRED_DEFAULT = 4;
 
    // ********************************************************************
