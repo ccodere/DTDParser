@@ -42,7 +42,7 @@ import java.util.*;
  * <p>For example:</p>
  *
  * <pre>
- *    &lt;foo:element1 attr1="bar" foo:attr2="baz" xmlns="http://foo"&gt;<br />
+ *    &lt;foo:element1 attr1="bar" foo:attr2="baz" xmlns="http://foo"&gt;
  *
  *    foo:element1:
  *    --------------------------------------
@@ -50,7 +50,7 @@ import java.util.*;
  *    Qualified name:  "foo:element1"
  *    Universal name:  "http://foo^element1"
  *    Prefix:          "foo"
- *    Namespace URI:   "http://foo"<br />
+ *    Namespace URI:   "http://foo"
  *
  *    attr1:
  *    --------------------------------------
@@ -58,7 +58,7 @@ import java.util.*;
  *    Qualified name:  "attr1"
  *    Universal name:  "attr1"
  *    Prefix:          null
- *    Namespace URI:   null<br />
+ *    Namespace URI:   null
  *
  *    foo:attr2:
  *    --------------------------------------
@@ -66,9 +66,9 @@ import java.util.*;
  *    Qualified name:  "foo:attr2"
  *    Universal name:  "http://foo^attr2"
  *    Prefix:          "foo"
- *    Namespace URI:   "http://foo"<br />
+ *    Namespace URI:   "http://foo"
  *
- *    &lt;element2&gt;<br />
+ *    &lt;element2&gt;
  *
  *    element2:
  *    --------------------------------------
@@ -76,9 +76,9 @@ import java.util.*;
  *    Qualified name:  "element2"
  *    Universal name:  "element2"
  *    Prefix:          null
- *    Namespace URI:   null<br />
+ *    Namespace URI:   null
  *
- *    &lt;element3 xmlns="http://foo" &gt;<br />
+ *    &lt;element3 xmlns="http://foo" &gt;
  *
  *    element2:
  *    --------------------------------------
@@ -86,7 +86,7 @@ import java.util.*;
  *    Qualified name:  "element3"
  *    Universal name:  "http://foo^element3"
  *    Prefix:          ""
- *    Namespace URI:   "http://foo"<br />
+ *    Namespace URI:   "http://foo"
  *
  * </pre>
  *
@@ -156,7 +156,7 @@ public class XMLName
     * <p>If the prefix is non-null, the URI must not be null.</p>
     *
     * @param uri The namespace URI. May be null.
-    * @param local The local name.
+    * @param localName The local name.
     * @param prefix The namespace prefix. May be null. Use an empty string for
     *    the default namespace.
     *
@@ -197,7 +197,7 @@ public class XMLName
     * the prefix is set.</p>
     *
     * @param uri The namespace URI. May be null.
-    * @param local The local name.
+    * @param localName The local name.
     *
     * @return The XMLName.
     */
@@ -305,6 +305,7 @@ public class XMLName
     *
     * @param prefix The namespace prefix. May be null or empty.
     * @param localName The local name.
+    * @return The qualified name of URI
     */
    public static String getQualifiedName(String prefix, String localName)
    {

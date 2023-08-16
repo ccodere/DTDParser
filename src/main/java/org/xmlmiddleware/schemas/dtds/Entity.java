@@ -72,7 +72,7 @@ public class Entity
    /**
     * Construct a new Entity and set its name.
     *
-    * @parameter name The entity's name.
+    * @param name The entity's name.
     */
    public Entity(String name)
    {
