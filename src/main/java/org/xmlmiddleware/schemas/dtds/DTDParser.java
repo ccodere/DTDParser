@@ -225,10 +225,19 @@ public class DTDParser
   {
     // '<!--' already parsed.
     int saveEntityState;
+    char c;
 
     saveEntityState = entityState;
     entityState = STATE_COMMENT;
     discardUntil("--");
+    // Manage embedded -- characters in the comment
+    if ((c = nextChar())!='>')
+    {
+      discardUntil("--");
+    } else
+    {
+      restore();
+    }
     requireChar('>');
     entityState = saveEntityState;
   }
@@ -1730,17 +1739,18 @@ public class DTDParser
     // (Included). See section 4.4.
 
     c = nextChar();
-    while ((c != quote) || ignoreQuote)
-    {
-      if ((c == '<') || (c == '%'))
+    
+      while ((c != quote) || ignoreQuote)
       {
-        if (!ignoreMarkup)
-          throwXMLMiddlewareException("Markup character '" + c + "' not allowed in entity value.");
+        if ((c == '<') || (c == '%'))
+        {
+          if (!ignoreMarkup)
+            throwXMLMiddlewareException("Markup character '" + c
+                + "' not allowed in entity value.");
+        }
+        appendLiteralBuffer(c);
+        c = nextChar();
       }
-      appendLiteralBuffer(c);
-      c = nextChar();
-    }
-
     // Reset the state and return the value.
 
     entityState = STATE_DTD;
