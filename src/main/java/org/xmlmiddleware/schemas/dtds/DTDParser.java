@@ -3167,7 +3167,7 @@ public class DTDParser
     if (bufferPos >= bufferLen)
     {
       bufferLen = reader.read(buffer, 0, buffer.length);
-      if (bufferLen == -1)
+         if (bufferLen <= 0)
       {
         // If we've hit the end of the Reader, pop the Reader off the
         // stack and get the first character in the next Reader.
@@ -3181,10 +3181,6 @@ public class DTDParser
       }
     }
     
-    if (bufferLen == 0)
-      return 0;
-    
-
     // Uncomment the following line for debugging. Note that what is
     // printed is everything that goes past this function. Some characters
     // go past multiple times because of being tested and restored, as
