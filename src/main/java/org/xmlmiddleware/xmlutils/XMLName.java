@@ -42,7 +42,7 @@ import java.util.*;
  * <p>For example:</p>
  *
  * <pre>
- *    &lt;foo:element1 attr1="bar" foo:attr2="baz" xmlns="http://foo"&gt;
+ *    &lt;foo:element1 attr1="bar" foo:attr2="baz" xmlns="http://foo"&gt;<br />
  *
  *    foo:element1:
  *    --------------------------------------
@@ -50,7 +50,7 @@ import java.util.*;
  *    Qualified name:  "foo:element1"
  *    Universal name:  "http://foo^element1"
  *    Prefix:          "foo"
- *    Namespace URI:   "http://foo"
+ *    Namespace URI:   "http://foo"<br />
  *
  *    attr1:
  *    --------------------------------------
@@ -58,7 +58,7 @@ import java.util.*;
  *    Qualified name:  "attr1"
  *    Universal name:  "attr1"
  *    Prefix:          null
- *    Namespace URI:   null
+ *    Namespace URI:   null<br />
  *
  *    foo:attr2:
  *    --------------------------------------
@@ -66,9 +66,9 @@ import java.util.*;
  *    Qualified name:  "foo:attr2"
  *    Universal name:  "http://foo^attr2"
  *    Prefix:          "foo"
- *    Namespace URI:   "http://foo"
+ *    Namespace URI:   "http://foo"<br />
  *
- *    &lt;element2&gt;
+ *    &lt;element2&gt;<br />
  *
  *    element2:
  *    --------------------------------------
@@ -76,17 +76,17 @@ import java.util.*;
  *    Qualified name:  "element2"
  *    Universal name:  "element2"
  *    Prefix:          null
- *    Namespace URI:   null
+ *    Namespace URI:   null<br />
  *
- *    &lt;element3 xmlns="http://foo" &gt;
+ *    &lt;element3 xmlns="http://foo" &gt;<br />
  *
- *    element2:
+ *    element3:
  *    --------------------------------------
  *    Local name:      "element3"
  *    Qualified name:  "element3"
  *    Universal name:  "http://foo^element3"
  *    Prefix:          ""
- *    Namespace URI:   "http://foo"
+ *    Namespace URI:   "http://foo"<br />
  *
  * </pre>
  *
@@ -123,7 +123,8 @@ public class XMLName
    private static String COLON = ":",
                          XML = "xml",
                          XMLNS = "xmlns",
-                         W3CNAMESPACE = "http://www.w3.org/XML/1998/namespace";
+                         W3CNAMESPACE = "http://www.w3.org/XML/1998/namespace",
+                         XMLNSNAMESPACE = "http://www.w3.org/2000/xmlns/";
 
    //***********************************************************************
    // Variables
@@ -263,11 +264,15 @@ public class XMLName
             // http://www.w3.org/XML/1998/namespace.
             uri = W3CNAMESPACE;
          }
-         else if (!prefix.toLowerCase().equals(XMLNS))
+         else if (prefix.toLowerCase().equals(XMLNS))
          {
-            // If the prefix is xmlns, there is no namespace (by definition).
-            // Therefore, leave the URI null. Otherwise, get the URI corresponding
-            // to the prefix.
+            // By definition, xmlns prefixes have a namespace of:
+            // http://www.w3.org/2000/xmlns/
+            uri = XMLNSNAMESPACE;
+         }
+         else
+         {
+            // Get the URI corresponding to the prefix.
 
             uri = (String)uris.get(prefix);
             if (uri == null)
@@ -416,10 +421,15 @@ public class XMLName
             // http://www.w3.org/XML/1998/namespace.
             uri = W3CNAMESPACE;
          }
-         else if (!prefix.toLowerCase().equals(XMLNS))
+         else if (prefix.toLowerCase().equals(XMLNS))
          {
-            // If the prefix is xmlns, there is no namespace (by definition).
-            // Therefore, leave the URI null. Otherwise, get the URI.
+            // By definition, xmlns prefixes have a namespace of:
+            // http://www.w3.org/2000/xmlns/
+            uri = XMLNSNAMESPACE;
+         }
+         else
+         {
+            // Get the URI corresponding to the prefix.
 
             uri = (String)uris.get(prefix);
             if (uri == null)
