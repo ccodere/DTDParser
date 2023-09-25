@@ -1,0 +1,5 @@
+<?xml encoding="UTF-8"?>
+
+<!-- ---  SVG 1.2 PS RNC schema -->
+
+<!ELEMENT id (#PCDATA)>

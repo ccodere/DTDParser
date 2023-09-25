@@ -1,0 +1,10 @@
+<!ELEMENT A (bar:B, C)>
+<!ATTLIST A
+          xmlns CDATA #FIXED "http://www.foo.org"
+          xmlns:bar CDATA #FIXED "http://www.bar.org"
+          D CDATA #IMPLIED>
+<!ELEMENT bar:B (#PCDATA)>
+<!ELEMENT C (#PCDATA)>
+<!ATTLIST C
+          bar:E CDATA #IMPLIED
+          xmlns:bar CDATA #FIXED "http://www.bar.org">

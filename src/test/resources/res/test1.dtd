@@ -1,0 +1,3 @@
+<!ELEMENT A (B, C)>
+<!ELEMENT B (#PCDATA)>
+<!ELEMENT C (#PCDATA)>

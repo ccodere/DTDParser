@@ -1,0 +1,5 @@
+<!ELEMENT foo:A (B, C)>
+<!ATTLIST foo:A
+          xmlns:foo CDATA #FIXED "http://www.foo.org">
+<!ELEMENT B (#PCDATA)>
+<!ELEMENT C (#PCDATA)>

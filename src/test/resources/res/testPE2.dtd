@@ -1,0 +1,5 @@
+<!ENTITY % testPE2a SYSTEM "samples/testPE2a.dtd">
+%testPE2a;
+<!ELEMENT A (%foo;)>
+<!ELEMENT B (#PCDATA)>
+<!ELEMENT C (#PCDATA)>

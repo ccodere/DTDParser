@@ -1,0 +1,4 @@
+<!ENTITY % foo "B, C" >
+<!ELEMENT A (%foo;)>
+<!ELEMENT B (#PCDATA)>
+<!ELEMENT C (#PCDATA)>

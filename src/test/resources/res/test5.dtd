@@ -1,0 +1,2 @@
+<!ELEMENT A (#PCDATA)>
+<!ATTLIST A foo (bar | baz | boo) "bar">
