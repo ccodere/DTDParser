@@ -14,9 +14,10 @@
 //
 //    http://www.informatik.tu-darmstadt.de/DVS1/
 
-// Version 2.0
+// Version 2.1
 // Changes from version 1.x:
 // * Change package name
+// Changes from version 2.0: None
 
 package org.xmlmiddleware.schemas.dtds;
 
@@ -26,7 +27,7 @@ package org.xmlmiddleware.schemas.dtds;
  * <p>Reference is used in the members of a Group.</p>
  *
  * @author Ronald Bourret
- * @version 2.0
+ * @version 2.1
  */
 
 public class Reference extends Particle

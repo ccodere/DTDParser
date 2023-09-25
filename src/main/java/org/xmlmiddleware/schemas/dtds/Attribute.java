@@ -14,9 +14,12 @@
 //
 //    http://www.informatik.tu-darmstadt.de/DVS1/
 
-// Version 2.0
+// Version 2.1
 // Changes from version 1.x:
 // * Change package name
+// Changes from version 2.0:
+// * Added isNamespaceDeclaration flag
+// * Use Java generics
 
 package org.xmlmiddleware.schemas.dtds;
 
@@ -94,7 +97,10 @@ public class Attribute
    /** The attribute type. */
    public int type = TYPE_UNKNOWN;
 
-   /** Whether the attribute is required and has a default. */
+   /** Whether the attribute is required and has a default. 
+    *  Possible values allowed here are {@link #REQUIRED_DEFAULT}, 
+    *  {@link #REQUIRED_FIXED},{@link #REQUIRED_OPTIONAL} or 
+    *  {@link #REQUIRED_REQUIRED}  */
    public int required = REQUIRED_UNKNOWN;
 
    /** The attribute's default value. May be null. */
@@ -104,7 +110,10 @@ public class Attribute
     * The legal values for attributes with a type of TYPE_ENUMERATED or
     * TYPE_NOTATION. Otherwise null.
     */
-   public Vector enums = null;
+   public Vector<String> enums = null;
+
+   /** Whether the attribute represents an XML namespace "declaration". */
+   public boolean isNamespaceDeclaration = false;
 
    // ********************************************************************
    // Constructors

@@ -14,8 +14,9 @@
 //
 //    http://www.informatik.tu-darmstadt.de/DVS1/
 
-// Version 2.0
+// Version 2.1
 // Changes from version 1.x: New in version 2.0
+// Changes from version 2.0: None
 
 package org.xmlmiddleware.utils;
 
@@ -24,7 +25,7 @@ package org.xmlmiddleware.utils;
  * is largely copied from SAXException, by David Megginson.</p>
  *
  * @author Ronald Bourret, 2001
- * @version 2.0
+ * @version 2.1
  */
 
 public class XMLMiddlewareException extends Exception 

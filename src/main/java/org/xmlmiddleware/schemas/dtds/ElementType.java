@@ -14,9 +14,11 @@
 //
 //    http://www.informatik.tu-darmstadt.de/DVS1/
 
-// Version 2.0
+// Version 2.1
 // Changes from version 1.x:
 // * Change package name
+// Changes from version 2.0:
+// * Use Java generics
 
 package org.xmlmiddleware.schemas.dtds;
 
@@ -27,7 +29,7 @@ import java.util.*;
  * Class representing an element type.
  *
  * @author Ronald Bourret
- * @version 2.0
+ * @version 2.1
  */
 
 public class ElementType
@@ -86,21 +88,21 @@ public class ElementType
     *
     * <p>Keyed by the attribute's XMLName. May be empty.</p>
     */
-   public Hashtable attributes = new Hashtable();
+   public Hashtable<XMLName, Attribute> attributes = new Hashtable<XMLName, Attribute>();
 
    /**
     * A Hashtable of child ElementTypes.
     *
     * <p>Keyed by the child's XMLName. May be empty.</p>
     */
-   public Hashtable children = new Hashtable();
+   public Hashtable<XMLName, ElementType> children = new Hashtable<XMLName, ElementType>();
 
    /**
     * A Hashtable of parent ElementTypes.
     *
     * <p>Keyed by the parent's XMLName. May be empty.</p>
     */
-   public Hashtable parents = new Hashtable();
+   public Hashtable<XMLName, ElementType> parents = new Hashtable<XMLName, ElementType>();
 
    // ********************************************************************
    // Constructors

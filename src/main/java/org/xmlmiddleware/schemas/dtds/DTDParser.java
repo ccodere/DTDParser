@@ -14,13 +14,26 @@
 //
 //    http://www.informatik.tu-darmstadt.de/DVS1/
 
-// Version 2.0
+// Version 2.1
 // Changes from version 1.0:
 // * Changed getMixedContent to check for case <!ELEMENT A (#PCDATA)*>.
 // * Changed getContentModel to check for case <!ELEMENT A ( #PCDATA | B )*>.
 // Changes from version 1.01:
 // * Change package name, class name
 // * Update for 2.0 code
+// Changes from version 2.0
+// * Fixed bug in parseExternalSubsetDecl for INCLUDE/IGNORE.
+// * Fixed bug in parseIgnore.
+// * Fixed bug in getParameterEntityRef.
+// * Deleted pushStringReader and pushURLReader.
+// * Changed getChar to handle 0-length buffers.
+// * Added methods to resolve namespaces using namespace "declarations" in DTD
+// * Added code to parseExternalSubset, parseDocTypeDecl to set the system and public IDs of DTDs
+// * Added code to getParameterEntityRef to set the URL of entities
+// * Added code to parseEntityDecl to set whether entities are external or internal
+// * Added code to flag Attributes that declare namespaces.
+// * Use Java generics
+// * Fixed bug where duplicate enumerated attribute value or notation type was allowed
 
 package org.xmlmiddleware.schemas.dtds;
 
@@ -37,18 +50,115 @@ import java.net.*;
 import java.util.*;
 
 /**
- * Parses an external DTD or the DTD in an XML document and creates a DTD
+ * Parses an external DTD or the DTD in an XML document and creates a DTD object.
  * object.
  * 
- * <p>
- * While DTDParser checks for most syntactic errors in the DTD, it does not
- * check for all of them. (For example, it does not check if entities are
- * well-formed.) Thus, results are undetermined if the DTD is not syntactically
- * correct.
- * </p>
+ * <p>While DTDParser checks for most syntactic errors in the DTD, it does not
+ * check for all of them. (For example, it does not check if entities are well-formed.)
+ * Thus, results are undetermined if the DTD is not syntactically correct.</p>
+ *
+ * <h3>Relative URIs</h3>
+ *
+ * <p>Complex DTDs are often broken into separate modules and combined using parameter
+ * entities. For portability, these entities usually refer to each other using relative
+ * URIs. For example, the following DTD uses relative URIs - relative URLs in this case -
+ * to reference parameter entities that point to the modules that compose the DTD.</p>
+ *
+ * <pre>
+ *    &lt;!-- This is the main module for a DTD for books. The Book element type is
+ *         declared in this module. The declarations for the element types used in
+ *         the title pages, chapters, and appendices are in separate modules. These
+ *         are included through parameter entity references. -->
+ *
+ *    &lt;!ELEMENT Book (Title, Chapter+, Appendix*)>
+ *
+ *    &lt;!ENTITY % TitleDeclarations "titledeclarations.dtd">
+ *    %TitleDeclarations;
+ *
+ *    &lt;!ENTITY % ChapterDeclarations "chapterdeclarations.dtd">
+ *    %ChapterDeclarations;
+ *
+ *    &lt;!ENTITY % AppendixDeclarations "appendixdeclarations.dtd">
+ *    %AppendixDeclarations;
+ * </pre>
+ *
+ * <p>In order to resolve these relative URIs, the InputSource passed as the <i>src</i>
+ * parameter of parseXMLDocument() and parseExternalSubset() must contain a system
+ * identifier. </p>
+ *
+ * <p>The actual resolution of the resolution must be managed by passing
+ * the <code>EntityResolver</code> interface that should receives 
+ * the entity information and return an input source for those external entities.</p>
+ *
+ * <p>If the system identifier is not set, then relative URIs cannot be resolved and
+ * the DTDParser will throw an exception. Note also that the DTDParser assumes all URIs
+ * (relative or absolute) are URLs and attempts to resolve them accordingly.</p>
+ *
+ * <h3>Handling namespaces</h3>
+ *
+ * <p>The DTDParser supports XML namespaces in two ways. If the caller passes
+ * hashtable mapping namespace prefixes to namespace URIs to the DTDParser, this is
+ * used to map prefixes in element type and attribute names to namespace URIs.</p>
+ *
+ * <p>If the caller does not pass a hashtable, the DTDParser builds one
+ * from namespace "declarations" in the DTD. A namespace "declaration" is an attribute
+ * that has the name xmlns or a name of the form xmlns:&lt;prefix&gt; and has a default,
+ * which provides the namespace URI. (If no such attributes exist, then element and
+ * attribute names must not contain colons and are not placed in any namespace.)
+ *
+ * <p>Namespace "declarations" in the DTD must meet the following rules:</p>
+ *
+ * <ol>
+ * <li><p>A prefix (including the default) cannot point to more than one namespace URI.</p></li>
+ *
+ * <li><p>Multiple prefixes cannot point to the same namespace URI.</p></li>
+ *
+ * <li><p>Multiple declarations of the same prefix-to-namespace URI mapping are allowed.</p></li>
+ *
+ * <li><p>Prefixes (including the default) cannot be undeclared (turned off).</p></li>
+ *
+ * <li><p>All prefixes (including the default) are assumed to be "in scope" when they are
+ * used. This is a reasonable assumption because, if it is not true, any document
+ * conforming to the DTD will be namespace invalid unless it contains additional namespace
+ * declarations. Note that this is equivalent to declaring all namespaces on the root element.</p></li>
+ * </ol>
+ *
+ * <p>Rules 1 and 2 guarantee that QNames serve as proxies for expanded names. That is,
+ * they are unique within the DTD. This is required to check that the same element type
+ * or attribute is not declared more than once.</p>
+ *
+ * <p>Rule 3 is needed because DTDs can reasonably include multiple declarations of
+ * the same namespace. For example, this occurs in a DTD that defines a hierarchy,
+ * but which is designed to have multiple entry points. Entry points lower in the
+ * hierarchy cannot inherit namespace declarations from their ancestors because those
+ * ancestors do not exist when the entry point is used.</p>
+ *
+ * <p>Rules 4 and 5 help resolve the problem of trying to determine the scope of
+ * namespace declarations from the DTD graph. This is impossible in the general
+ * case. To see why, consider the following DTD:</p>
+ *
+ * <pre>
+ *    &lt;!ELEMENT a:A (b:B?)>
+ *    &lt;!ATTLIST a:A
+ *              xmlns:a #FIXED "http://www.a.org">
+ *    &lt;!ELEMENT b:B (a:A?)>
+ *    &lt;!ATTLIST b:B
+ *              xmlns:a #FIXED "http://www.a.org"
+ *              xmlns:b #FIXED "http://www.b.org"> 
+ * </pre>
+ *
+ * <p>Notice that this DTD forms a cycle. That is, a:A contains b:B which contains a:A. Because
+ * DTDs do not declare the root element type, it is not possible to determine if prefix b is in
+ * scope when a:A is declared. That is, if a:A is used as the root element type, then b is not
+ * in scope. But if b:B is used as the root element type, then b is in scope. The only reasonable
+ * solution is to assume that the DTD author has declared all namespaces before they are used.</p>
+ *
+ * <p>Note: If there is an attribute with the name xmlns and a default value, then unprefixed
+ * names are put in the namespace specified by that default value. If no such attribute exists,
+ * then unprefixed names are not put in any namespace.</p>
  * 
  * @author Ronald Bourret
- * @version 2.0
+ * @version 2.1
  */
 
 public class DTDParser
@@ -80,6 +190,10 @@ public class DTDParser
   static final int BUFSIZE = 8096,
       LITBUFSIZE = 1024,
       NAMEBUFSIZE = 1024;
+
+   static String XMLNS = "xmlns",
+                 EMPTYSTRING = "",
+                 COLON = ":";
 
   // ********************************************************************
   // Variables
@@ -213,8 +327,7 @@ public class DTDParser
     while (!isChar('>'))
     {
       requireWhitespace();
-      if (isChar('>'))
-        break;
+         if (isChar('>')) break;
       getAttDef(elementType);
     }
   }
@@ -282,8 +395,7 @@ public class DTDParser
     String root, systemID = null;
     String publicId = null;
 
-    if (!isString("<!DOCTYPE"))
-      return;
+    if (!isString("<!DOCTYPE")) return;
 
     // Get the root element type.
 
@@ -427,7 +539,7 @@ public class DTDParser
         // If a parameter entity isn't already defined, use the
         // current definition.
 
-        dtd.parameterEntities.put(name, entity);
+        dtd.parameterEntities.put(name, (ParameterEntity)entity);
       }
     }
     else if (isString("NDATA"))
@@ -449,7 +561,7 @@ public class DTDParser
         // current definition. Remember that unparsed entities
         // and parsed general entities share the same namespace.
 
-        dtd.unparsedEntities.put(name, entity);
+        dtd.unparsedEntities.put(name, (UnparsedEntity)entity);
       }
     }
     else
@@ -468,7 +580,7 @@ public class DTDParser
         // current definition. Remember that unparsed entities
         // and parsed general entities share the same namespace.
 
-        dtd.parsedGeneralEntities.put(name, entity);
+        dtd.parsedGeneralEntities.put(name, (ParsedGeneralEntity)entity);
       }
     }
     discardWhitespace();
@@ -518,16 +630,22 @@ public class DTDParser
       try
       {
         discardWhitespace();
-      } catch (EOFException eof)
+         }
+         catch (EOFException eof)
       {
-        if (eofOK)
-          return;
+            if (eofOK) return;
         throw eof;
       }
-      declFound = parseMarkupDecl();
+         // 8/19/04, Ronald Bourret
+         // Call parseConditional before parseMarkupDecl instead of the other way
+         // around. parseMarkupDecl throws an exception if it tries to parse an INCLUDE
+         // or IGNORE statement, while parseConditional simply returns false when
+         // parsing markup declarations.
+
+         declFound = parseConditional();
       if (!declFound)
       {
-        declFound = parseConditional();
+            declFound = parseMarkupDecl();
       }
     }
   }
@@ -569,8 +687,7 @@ public class DTDParser
           break;
 
         case 2: // <! found
-          if (c == '[')
-            return false;
+               if (c == '[') return false;
           state = 0;
           break;
 
@@ -579,8 +696,9 @@ public class DTDParser
           break;
 
         case 4: // ]] found
-          if (c == '>')
-            return true;
+               // 8/19/04, Ronald Bourret
+               // Replaced (c == ']') with (c == '>')
+               if (c == '>') return true;
           state = 0;
           break;
       }
@@ -790,6 +908,8 @@ public class DTDParser
       URISyntaxException
   {
     // PUBLIC already parsed.
+      // BUG! Need state (used in processAmpersand() and processPercent()) so that
+      // & and % are not treated as entity references.
 
     requireWhitespace();
     return getPubidLiteral();
@@ -812,6 +932,8 @@ public class DTDParser
       URISyntaxException
   {
     // SYSTEM already parsed.
+      // BUG! Need state (used in processAmpersand() and processPercent()) so that
+      // & and % are not treated as entity references.
 
     requireWhitespace();
     return getSystemLiteral();
@@ -889,8 +1011,7 @@ public class DTDParser
       if (isString("encoding"))
       {
         parseEncodingDecl();
-        if (!isWhitespace())
-          return;
+            if (!isWhitespace()) return;
         discardWhitespace();
       }
 
@@ -1407,6 +1528,9 @@ public class DTDParser
       updateANYParents();
       checkElementTypeReferences();
       checkNotationReferences();
+         // BUG! Need to check that ENTITY/ENTITIES attributes refer to declared unparsed entities.
+         if (namespaceURIs == null) resolveNamespaces();
+         flagNamespaceDeclarations();
     }
   }
 
@@ -1473,6 +1597,7 @@ public class DTDParser
     // Checks that all notations referred to Attributes have been defined.
 
     Enumeration e1, e2;
+    Enumeration e3;
     ElementType elementType;
     Attribute attribute;
     String notation;
@@ -1500,10 +1625,10 @@ public class DTDParser
       }
     }
 
-    e1 = dtd.unparsedEntities.elements();
-    while (e1.hasMoreElements())
+    e3 = dtd.unparsedEntities.elements();
+    while (e3.hasMoreElements())
     {
-      entity = (UnparsedEntity) e1.nextElement();
+      entity = (UnparsedEntity) e3.nextElement();
       if (!dtd.notations.containsKey(entity.notation))
         throw new XMLMiddlewareException("Notation " + entity.notation
             + " not defined. Used by the " + entity.name + " unparsed entity.");
@@ -1517,6 +1642,224 @@ public class DTDParser
   }
 
   // ********************************************************************
+   // Methods -- namespace resolution
+   // ********************************************************************
+
+   void resolveNamespaces()
+      throws XMLMiddlewareException
+   {
+      // 11/07, Ronald Bourret (based on suggestion by Eliot Kimber)
+      // This method resolves namespace URIs based on namespace "declarations" in the DTD.
+      // A namespace "declaration" is an xmlns attribute with a default value.
+      //
+      // This method is called only when the user did not pass namespace declarations to
+      // one of the parse methods. See the introduction for a list of assumptions and
+      // restrictions made by this method.
+
+      buildNamespaceURIs();
+      resolveNames();
+   }
+
+   void buildNamespaceURIs()
+      throws XMLMiddlewareException
+   {
+      // 11/07, Ronald Bourret (based on suggestion by Eliot Kimber)
+      // This method builds a hashtable of prefix-to-URI mappings based on xmlns 
+      // attributes in the DTD. These attributes must have a default value and must
+      // meet the following rules:
+      //
+      // 1) A prefix (including the default) cannot point to more than one namespace URI.
+      //
+      // 2) Multiple prefixes cannot point to the same namespace URI.
+      //
+      // 3) Multiple declarations of the same prefix => namespace URI mapping are allowed.
+      //
+      // 4) Prefixes (including the default) cannot be undeclared (turned off).
+      //
+      // Rules 1 and 2 guarantee that QNames serve as proxies for expanded names. That is,
+      // they are unique within the DTD. This is required to check that the same element
+      // or attribute is not declared more than once.
+      //
+      // Rule 3 is needed because DTDs can reasonably include multiple declarations of
+      // the same namespace. For example, this occurs in a DTD that defines a hierarchy,
+      // but which is designed to have multiple entry points. Entry points lower in the
+      // hierarchy cannot inherit namespace declarations from their parents because those
+      // parents do not exist when the entry point is the root.
+      //
+      // Rule 4 helps resolve the problem of trying to determine scope from the DTD graph,
+      // which is impossible in the general case. 
+
+      Enumeration enumElementTypes,
+                  enumAttributes;
+      ElementType elementType;
+      Attribute   attr;
+      String      prefix = null,
+                  attrName = null,
+                  uri;
+      int         colon;
+
+      this.namespaceURIs = new Hashtable();
+
+      enumElementTypes = dtd.elementTypes.elements();
+      while (enumElementTypes.hasMoreElements())
+      {
+         // Iterate through all the element types. For each element type,
+         // get the attributes.
+
+         elementType = (ElementType)enumElementTypes.nextElement();
+         enumAttributes = elementType.attributes.elements();
+
+         while (enumAttributes.hasMoreElements())
+         {
+            // Iterate through all the attributes. For each attribute, check
+            // if the attribute name is either xmlns or uses xmlns as a prefix.
+
+            attr = (Attribute) enumAttributes.nextElement();
+            if (attr.type != Attribute.TYPE_CDATA) continue;
+
+            prefix = null;
+            attrName = attr.name.getQualifiedName();
+            colon = attrName.indexOf(COLON);
+            if (colon == -1)
+            {
+               if (attrName.equals(XMLNS))
+               {
+                  prefix = "";
+               }
+            }
+            else
+            {
+               if (attrName.substring(0, colon).equals(XMLNS))
+               {
+                  prefix = attrName.substring(colon + 1);
+               }
+            }
+
+            if ((prefix != null) && (attr.defaultValue != null))
+            {
+               // Check if the defaultValue is an empty string. This is used to turn a namespace
+               // declaration off and is not supported (rule 4).
+
+               if (attr.defaultValue.equals(EMPTYSTRING))
+                  throw new XMLMiddlewareException("xmlns attributes may not have a default value equal to the empty string: " + attrName);
+
+               // If the prefix is already used, then one of the following applies:
+               //
+               // a) The prefix is mapped to the same URI. This is allowed (rule 3). In this case, we
+               //    remove the prefix and URI so we can test if any other prefixes are mapped
+               //    to the same URI, which is not allowed.
+               //
+               // b) The prefix is mapped to a different URI. This is not allowed (rule 1).
+
+               uri = (String)namespaceURIs.get(prefix);
+               if (uri != null)
+               {
+                  if (uri.equals(attr.defaultValue))
+                  {
+                     namespaceURIs.remove(prefix);
+                  }
+                  else
+                  {
+                     throw new XMLMiddlewareException("Prefix " + prefix + " mapped to two different URIs: " + uri + " and " + attr.defaultValue);
+                  }
+               }
+
+               // Check if a different prefix is mapped to the same URI. This is not allowed (rule 2).
+               // Note that we do not have to worry about another mapping of the same prefix to
+               // the same URI (which is allowed) because we removed this earlier.
+
+               if (namespaceURIs.contains(attr.defaultValue))
+                  throw new XMLMiddlewareException("More than one prefix mapped to the same URI: " + attr.defaultValue);
+
+               // Add the new prefix and URI.
+
+               namespaceURIs.put(prefix, attr.defaultValue);
+            }
+         }
+      }
+   }
+
+   void resolveNames()
+      throws XMLMiddlewareException
+   {
+      // 11/07, Ronald Bourret (based on suggestion by Eliot Kimber)
+      // This method resolves element and attribute names against the hashtable of
+      // of prefix-to-URI mappings built in buildNamespaceURIs().
+
+      Enumeration enumElementTypes,
+                  enumAttributes;
+      ElementType elementType;
+      Attribute   attr;
+
+      enumElementTypes = dtd.elementTypes.elements();
+      while (enumElementTypes.hasMoreElements())
+      {
+         // Iterate through all the element types. For each element type,
+         // resolve the element type name. Note that we resolve all names,
+         // including those without colons, because the default namespace
+         // might have been declared.
+
+         elementType = (ElementType)enumElementTypes.nextElement();
+         elementType.name.resolveNamespace(namespaceURIs);
+
+         enumAttributes = elementType.attributes.elements();
+         while (enumAttributes.hasMoreElements())
+         {
+            // Iterate through all the attributes and resolve the namespaces of those
+            // names that include a colon. We do not resolve attribute names that do
+            // not include colons because, by definition, these are not in any namespace.
+
+            attr = (Attribute)enumAttributes.nextElement();
+            if (attr.name.getLocalName().indexOf(COLON) != -1)
+            {
+               attr.name.resolveNamespace(namespaceURIs);
+            }
+         }
+      }
+   }
+
+   void flagNamespaceDeclarations()
+   {
+      // 1/18, Ronald Bourret
+      // This method flags attribute that are used to declare namespaces --
+      // that is, they have (a) a namespace-aware name, (b) a default value,
+      // and a prefix or name of xmlns.
+
+      Enumeration<ElementType> enumElementTypes;
+      Enumeration<Attribute>   enumAttributes;
+      ElementType elementType;
+      Attribute   attr;
+      String      prefix;
+
+      enumElementTypes = dtd.elementTypes.elements();
+      while (enumElementTypes.hasMoreElements())
+      {
+         // Iterate through all the element types and get their attributes.
+
+         elementType = enumElementTypes.nextElement();
+         enumAttributes = elementType.attributes.elements();
+         while (enumAttributes.hasMoreElements())
+         {
+            // Iterate through all the attributes and flag any attributes
+            // used to declare namespaces.
+
+            attr = enumAttributes.nextElement();
+            if ((attr.name.isNamespaceAware()) &&
+                (attr.type == Attribute.TYPE_CDATA) &&
+                (attr.defaultValue != null))
+            {
+               prefix = attr.name.getPrefix();
+               if (((prefix != null) && prefix.equals(XMLNS)) ||
+                   (attr.name.getLocalName().equals(XMLNS)))
+               {
+                  attr.isNamespaceDeclaration = true;
+               }
+            }
+         }
+      }
+   }
+
+   // ********************************************************************
   // Methods -- checking
   // 
   // NOTE: These methods are all designed on the notion that they start
@@ -1534,8 +1877,7 @@ public class DTDParser
     // Checks if the next character is whitespace. If not, the
     // position is restored.
 
-    if (isWhitespace(nextChar()))
-      return true;
+      if (isWhitespace(nextChar())) return true;
     restore();
     return false;
   }
@@ -1557,8 +1899,7 @@ public class DTDParser
       URISyntaxException
   {
     // Discards a sequence of whitespace.
-    while (isWhitespace())
-      ;
+      while (isWhitespace());
   }
 
   void discardUntil(String s)
@@ -1613,8 +1954,7 @@ public class DTDParser
     // Checks if the next character matches c. If not, the position
     // is restored.
 
-    if (nextChar() == c)
-      return true;
+      if (nextChar() == c) return true;
     restore();
     return false;
   }
@@ -1656,6 +1996,8 @@ public class DTDParser
       throws XMLMiddlewareException, URISyntaxException, MalformedURLException, IOException,
       EOFException
   {
+      // BUG! This method needs to normalize the attribute value. See section 3.3.3.
+
     // Gets something that matches the AttValue production. May be empty.
 
     char quote, c;
@@ -1739,7 +2081,6 @@ public class DTDParser
     // (Included). See section 4.4.
 
     c = nextChar();
-    
       while ((c != quote) || ignoreQuote)
       {
         if ((c == '<') || (c == '%'))
@@ -2768,9 +3109,104 @@ public class DTDParser
     return c;
   }
 
+      // THE JOY OF ENTITIES
+      //
+      // The table in section 4.4 shows how entity references are handled. Cases
+      // handled as follows:
+      //
+      // Reference in Content:
+      //    The DTDParser does not process content, so this entire row is ignored.
+      //
+      // Reference in Attribute Value:
+      //    Parameter: NOT RECOGNIZED
+      //       processPercent()/case STATE_ATTVALUE returns '%'
+      //
+      //    Internal General: INCLUDED IN LITERAL
+      //       processAmpersand()/case STATE_ATTVALUE calls getGeneralEntityRef(), 
+      //       which gets the entity value and sets ignoreQuote to true.
+      //
+      //    External Parsed General: FORBIDDEN
+      //       processAmpersand()/case STATE_ATTVALUE calls getGeneralEntityRef(), 
+      //       which throws error when entity.value == null.
+      //
+      //    Unparsed: FORBIDDEN
+      //       processAmpersand()/case STATE_ATTVALUE calls getGeneralEntityRef(), 
+      //       which throws error when entity not found (should check explicitly).
+      //
+      //    Character: INCLUDED
+      //       processAmpersand()/case STATE_ATTVALUE calls getCharRef(), which
+      //       gets the character and sets both ignoreQuote and ignoreMarkup to true.
+      //
+      // Occurs as Attribute Value:
+      //    Parameter: NOT RECOGNIZED
+      //       Not checked, so not recognized.
+      //
+      //    Internal General: FORBIDDEN
+      //       BUG! Should be checked as part of post-processing. See postProcessDTD().
+      //
+      //    External Parsed General: FORBIDDEN
+      //       BUG! Should be checked as part of post-processing. See postProcessDTD().
+      //
+      //    Unparsed: NOTIFY
+      //       BUG! Should be checked as part of post-processing. See postProcessDTD().
+      //
+      //    Character: NOT RECOGNIZED
+      //       Not checked, so not recognized.
+      //
+      // Reference in Entity Value:
+      //    Parameter: INCLUDED IN LITERAL
+      //       processPercent/case STATE_ENTITYVALUE calls getParameterEntityRef(), which
+      //       creates a string or URL Reader over the value.
+      //
+      //    Internal General: BYPASSED
+      //       processAmpersand()/case STATE_ENTITYVALUE returns '&'
+      //
+      //    External Parsed General: BYPASSED
+      //       processAmpersand()/case STATE_ENTITYVALUE returns '&'
+      //
+      //    Unparsed: ERROR
+      //       BUG! processAmpersand()/case STATE_ENTITYVALUE returns '&'. Should check
+      //       that entity is unparsed and return error.
+      //
+      //    Character: INCLUDED
+      //       processAmpersand()/case STATE_ENTITYVALUE calls getCharRef(), which
+      //       gets the character and sets both ignoreQuote and ignoreMarkup to true.
+      //
+      // Reference in DTD:
+      //    Parameter: INCLUDED AS PE
+      //       processPercent/case STATE_DTD calls getParameterEntityRef(), which
+      //       creates a string or URL Reader over the value, adds string Readers
+      //       with a single space before and after the value, and sets ignoreQuotes
+      //       and ignoreMarkup to false.
+      //
+      //    Internal General: FORBIDDEN
+      //       Throws an exception in processAmpersand/STATE_DTD.
+      //
+      //    External Parsed General: FORBIDDEN
+      //       Throws an exception in processAmpersand/STATE_DTD.
+      //
+      //    Unparsed: FORBIDDEN
+      //       Throws an exception in processAmpersand/STATE_DTD.
+      //
+      //    Character: FORBIDDEN
+      //       Throws an exception in processAmpersand/STATE_DTD.
+      //
+      //
+      // BUG! In general, whether to process or ignore markup in entity values is unclear.
+      //      See sections 2.8, 4.4.2, 4.4.5, 4.4.8, 4.5, 4.6, and appendix C. These affect
+      //      the settings of ignoreMarkup and ignoreQuotes, which might also be
+      //      insufficient to enforce the rules. This applies to getCharRef(),
+      //      getGeneralEntityRef(), and getParameterEntityRef().
+      //
+      // BUG! It is not clear that the parser constructs entity replacement text correctly,
+      //      especially with respect to replacement of entity/character references in the
+      //      entity. See especially section 4.5.
+
   char processAmpersand()
       throws XMLMiddlewareException, IOException, EOFException, URISyntaxException
   {
+      // See table in section 4.4.
+
     char c;
 
     switch (entityState)
@@ -2816,6 +3252,8 @@ public class DTDParser
       throws XMLMiddlewareException, URISyntaxException, MalformedURLException, IOException,
       EOFException
   {
+      // See section 4.4.
+
     char c;
 
     switch (entityState)
@@ -2825,8 +3263,7 @@ public class DTDParser
         // rather than a parameter entity reference.
         c = getChar();
         restore();
-        if (isWhitespace(c))
-          return '%';
+            if (isWhitespace(c)) return '%';
         getParameterEntityRef();
         return nextChar();
 
@@ -2919,8 +3356,6 @@ public class DTDParser
     resetNameBuffer();
     while ((c = getChar()) != ';')
     {
-      /* Empty value */
-      if (c == 0) break;
       appendNameBuffer(c);
     }
     entityName = getNameBuffer();
@@ -2937,6 +3372,8 @@ public class DTDParser
       entity = (ParsedGeneralEntity) predefinedEntities.get(entityName);
       if (entity == null)
         throwXMLMiddlewareException("Reference to undefined parsed general entity: " + entityName);
+
+         // BUG! Also need to check that the name is not the name of an unparsed entity.
     }
 
     if (entity.value == null)
@@ -2966,8 +3403,6 @@ public class DTDParser
     resetNameBuffer();
     while ((c = getChar()) != ';')
     {
-      /* Empty value */
-      if (c == 0) break;
       appendNameBuffer(c);
     }
     entityName = getNameBuffer();
@@ -2982,21 +3417,44 @@ public class DTDParser
     if (entity == null)
       throwXMLMiddlewareException("Reference to undefined parameter entity: " + entityName);
 
-    // Set up the Reader information. Notice that we need to include spaces
-    // before and after the entity value. Also notice that we ignore quotes
-    // if the parameter entity occurs inside an entity value.
+      // 8/19/04, Ronald Bourret
+      // Add spaces before and after the entity value only when the entity state is STATE_DTD.
 
-    pushStringReader(" ", false, false);
+      // Set up the Reader information.
+
+      // If the entity is not referenced in an entity value -- in other words, if
+      // entityState is STATE_DTD -- then prepend a space to the entity value. We
+      // do this by creating a StringReader over a single space and pushing it onto
+      // the Reader stack. For details, see sections 4.4.5 and 4.4.8 of the XML 1.0
+      // recommendation.
+
+      if (entityState == STATE_DTD)
+      {
+         createStringReader(" ");
+         pushCurrentReader();
+      }
+
+      // Create a new Reader over the entity value.
+
     if (entity.value != null)
     {
-      pushStringReader(entity.value, (entityState == STATE_ENTITYVALUE), false);
+         createStringReader(entity.value);
     }
     else
     {
-      pushURLReader(entity.publicID, entity.systemID, (entityState == STATE_ENTITYVALUE), false);
+      createURLReader(entity.publicID, entity.systemID);
     }
 
-    createStringReader(" ");
+      // If the entity is not referenced in an entity value, prepend a space to the
+      // entity value. We do this by pushing the Reader that was created for the
+      // entity value onto the Reader stack and creating a StringReader over a single space.
+
+      if (entityState == STATE_DTD)
+      {
+         pushCurrentReader();
+         createStringReader(" ");
+      }
+
     ignoreQuote = false;
     ignoreMarkup = false;
   }
@@ -3025,6 +3483,13 @@ public class DTDParser
     try
     {
       input = resolver.resolveEntity(publicId, systemId);
+      if (input == null)
+      {
+        if (publicId != null)
+          throw new IOException("Cannot input from Public ID '"+publicId+"'");
+        if (systemId != null)
+          throw new IOException("Cannot input from SYSTEM ID '"+systemId+"'");
+      }
     } catch (SAXException e)
     {
       throw new IOException(e.toString());
@@ -3052,10 +3517,12 @@ public class DTDParser
         readerType, bufferPos, bufferLen, line, column, ignoreQuote, ignoreMarkup));
   }
 
+   // 8/19/04, Ronald Bourret
+   // These methods are no longer needed. See new code in getParameterEntityRef.
+/*
   void pushStringReader(String s, boolean ignoreQuote, boolean ignoreMarkup)
   {
-    readerStack.push(new ReaderInfo(null, null, null, null, s, READER_STRING, 0, 0, 1, 1,
-        ignoreQuote, ignoreMarkup));
+      readerStack.push(new ReaderInfo(null, null, null, s, READER_STRING, 0, 0, 1, 1, ignoreQuote, ignoreMarkup));
   }
 
   void pushURLReader(String publicId, String systemId, boolean ignoreQuote, boolean ignoreMarkup)
@@ -3066,6 +3533,7 @@ public class DTDParser
     readerStack.push(new ReaderInfo(null, null, publicId, systemId, null, READER_URL, 0, 0, 1, 1,
         ignoreQuote, ignoreMarkup));
   }
+*/
 
   void popReader()
       throws XMLMiddlewareException, IOException, EOFException
@@ -3167,6 +3635,11 @@ public class DTDParser
     if (bufferPos >= bufferLen)
     {
       bufferLen = reader.read(buffer, 0, buffer.length);
+
+         // 8/19/04, Ronald Bourret
+         // Change (bufferLen == -1) to (bufferLen <= 0). This is needed to handle
+         // parameter entities whose value/content is an empty string.
+
          if (bufferLen <= 0)
       {
         // If we've hit the end of the Reader, pop the Reader off the

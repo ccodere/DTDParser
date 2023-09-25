@@ -20,6 +20,8 @@
 // * Now uses XMLWriter
 // * Split off serialization methods.
 // * Moved post-production methods to DTDParser.
+// Changes from version 2.0:
+// * Use Java generics
 
 package org.xmlmiddleware.schemas.dtds;
 
@@ -51,14 +53,14 @@ public class DTD
     *
     * <p>Keyed by the element type's XMLName.</p>
     */
-   public Hashtable elementTypes = new Hashtable();
+   public Hashtable<XMLName, ElementType> elementTypes = new Hashtable<XMLName, ElementType>();
 
    /**
     * A Hashtable of Notations defined in the DTD.
     *
     * <p>Keyed by the notation's name.</p>
     */
-   public Hashtable notations = new Hashtable();
+   public Hashtable<String, Notation> notations = new Hashtable<String, Notation>();
 
    /**
     * A Hashtable of ParameterEntities defined in the DTD.
@@ -75,21 +77,21 @@ public class DTD
     * that is, its element types, attributes, and notations -- rather than its
     * physical structure.</p>
     */
-   public Hashtable parameterEntities = new Hashtable();
+   public Hashtable<String, ParameterEntity> parameterEntities = new Hashtable<String, ParameterEntity>();
 
    /**
     * A Hashtable of ParsedGeneralEntities defined in the DTD.
     *
     * <p>Keyed by the entity's name.</p>
     */
-   public Hashtable parsedGeneralEntities = new Hashtable();
+   public Hashtable<String, ParsedGeneralEntity> parsedGeneralEntities = new Hashtable<String, ParsedGeneralEntity>();
 
    /**
     * A Hashtable of UnparsedEntities defined in the DTD.
     *
     * <p>Keyed by the entity's name.</p>
     */
-   public Hashtable unparsedEntities = new Hashtable();
+   public Hashtable<String, UnparsedEntity> unparsedEntities = new Hashtable<String, UnparsedEntity>();
 
    // ********************************************************************
    // Constructors
