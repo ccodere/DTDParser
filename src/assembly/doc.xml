@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<assembly>
+  <id>autodoc</id>
+  <formats>
+    <format>zip</format>
+  </formats>
+  <includeBaseDirectory>true</includeBaseDirectory>
+  <fileSets>
+    <fileSet>
+      <directory>${project.build.directory}/site/apidocs</directory>
+	  <outputDirectory>apidocs</outputDirectory>
+    </fileSet>
+  </fileSets>
+</assembly>
