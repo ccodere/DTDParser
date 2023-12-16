@@ -39,7 +39,6 @@ package org.xmlmiddleware.schemas.dtds;
 
 import org.xmlmiddleware.xmlutils.*;
 import org.xmlmiddleware.utils.*;
-
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -200,9 +199,10 @@ public class DTDParser
   // ********************************************************************
   EntityResolver resolver = new DefaultHandler();
   DTD dtd;
+  Hashtable attributeNamespaceURIs;
   Hashtable namespaceURIs,
-      predefinedEntities = new Hashtable(),
-      declaredElementTypes = new Hashtable();
+  predefinedEntities = new Hashtable(),
+  declaredElementTypes = new Hashtable();
   TokenList dtdTokens;
   Reader reader;
   int readerType, bufferPos, bufferLen, literalPos, namePos,
@@ -260,6 +260,17 @@ public class DTDParser
   {
     initGlobals();
     this.namespaceURIs = namespaceURIs;
+    // Check if we have defined a default localPrefix "", if so then
+    // these cannot apply to attributes.
+    if ((this.namespaceURIs!=null) && (this.namespaceURIs.get(EMPTYSTRING)!=null))
+    {
+      this.attributeNamespaceURIs = (Hashtable) this.namespaceURIs.clone(); 
+      this.attributeNamespaceURIs.remove(EMPTYSTRING);
+    } else
+    {
+      this.attributeNamespaceURIs = this.namespaceURIs;
+
+    }
     if (entityResolver != null)
     {
       this.resolver = entityResolver;
@@ -303,6 +314,17 @@ public class DTDParser
       this.resolver = entityResolver;
     }
     this.namespaceURIs = namespaceURIs;
+    // Check if we have defined a default localPrefix "", if so then
+    // these cannot apply to attributes.
+    if ((this.namespaceURIs!=null) && (this.namespaceURIs.get(EMPTYSTRING)!=null))
+    {
+      this.attributeNamespaceURIs = (Hashtable) this.namespaceURIs.clone(); 
+      this.attributeNamespaceURIs.remove(EMPTYSTRING);
+    } else
+    {
+      this.attributeNamespaceURIs = this.namespaceURIs;
+
+    }
     openInputSource(src);
     parseExternalSubset(true);
     postProcessDTD();
@@ -1044,7 +1066,7 @@ public class DTDParser
     // so we can later check if the name has already been declared. Note that we only
     // care about the hashtable key, not the hashtable element.
 
-    name = getXMLName();
+    name = getXMLName(namespaceURIs);
     if (declaredElementTypes.containsKey(name))
       throwXMLMiddlewareException("Duplicate element type declaration: " + name.getUniversalName());
     declaredElementTypes.put(name, name);
@@ -1075,7 +1097,7 @@ public class DTDParser
 
     // Get the attribute name and create a new Attribute.
 
-    name = getXMLName();
+    name = getXMLName(attributeNamespaceURIs);
     attribute = new Attribute(name);
 
     // If the element does not have an attribute with this name, add
@@ -1269,7 +1291,7 @@ public class DTDParser
 
     // Get the element type name and get the ElementType from the DTD.
 
-    name = getXMLName();
+    name = getXMLName(namespaceURIs);
     return dtd.createElementType(name);
   }
 
@@ -1437,7 +1459,7 @@ public class DTDParser
     }
   }
 
-  XMLName getXMLName()
+  XMLName getXMLName(Hashtable namespaceURIs)
       throws XMLMiddlewareException, MalformedURLException, IOException, EOFException,
       URISyntaxException
   {
@@ -1790,7 +1812,11 @@ public class DTDParser
                   enumAttributes;
       ElementType elementType;
       Attribute   attr;
-
+      // We need to create a copy of the hashtable, since the hashCode may be modified.
+      Hashtable<XMLName, ElementType> updatedElementTypes = new Hashtable<XMLName, ElementType>();      
+      // Mapping table between old elementNames and old Element
+      Hashtable<XMLName, ElementType> childrenMapping = new Hashtable<XMLName, ElementType>();      
+      
       enumElementTypes = dtd.elementTypes.elements();
       while (enumElementTypes.hasMoreElements())
       {
@@ -1800,9 +1826,13 @@ public class DTDParser
          // might have been declared.
 
          elementType = (ElementType)enumElementTypes.nextElement();
+         
+         // Hash key value may have changed copy the new value to new Map
          elementType.name.resolveNamespace(namespaceURIs);
-
+         updatedElementTypes.put(elementType.name, elementType);
+         
          enumAttributes = elementType.attributes.elements();
+         Hashtable<XMLName, Attribute> updatedAttributes = new Hashtable<XMLName, Attribute>();
          while (enumAttributes.hasMoreElements())
          {
             // Iterate through all the attributes and resolve the namespaces of those
@@ -1814,8 +1844,54 @@ public class DTDParser
             {
                attr.name.resolveNamespace(namespaceURIs);
             }
+            updatedAttributes.put(attr.name,attr);
          }
+         // Replace the attributes with the rehashed table.
+         elementType.attributes.clear();
+         elementType.attributes = null;
+         elementType.attributes = updatedAttributes;
       }
+      // Replace the elements with the rehashed table.
+      dtd.elementTypes.clear();
+      dtd.elementTypes = null;
+      dtd.elementTypes = updatedElementTypes;
+      
+      // Go through all children of each element and rehash them
+      enumElementTypes = dtd.elementTypes.elements();
+      while (enumElementTypes.hasMoreElements())
+      {
+         elementType = (ElementType)enumElementTypes.nextElement();
+         Enumeration childrenElementTypes = elementType.children.elements();
+         Hashtable<XMLName, ElementType> updatedChildren = new Hashtable<XMLName, ElementType>();
+         while (childrenElementTypes.hasMoreElements())
+         {
+           ElementType childElementType = (ElementType)childrenElementTypes.nextElement();
+           updatedChildren.put(childElementType.name, childElementType);
+         }
+         elementType.children.clear();
+         elementType.children = null;
+         elementType.children = updatedChildren;
+      }
+      
+      // Go through all parents of each element and rehash them
+      enumElementTypes = dtd.elementTypes.elements();
+      while (enumElementTypes.hasMoreElements())
+      {
+         elementType = (ElementType)enumElementTypes.nextElement();
+         Enumeration parentElementTypes = elementType.parents.elements();
+         Hashtable<XMLName, ElementType> updatedParents = new Hashtable<XMLName, ElementType>();
+         while (parentElementTypes.hasMoreElements())
+         {
+           ElementType childElementType = (ElementType)parentElementTypes.nextElement();
+           updatedParents.put(childElementType.name, childElementType);
+         }
+         elementType.parents.clear();
+         elementType.parents = null;
+         elementType.parents = updatedParents;
+      }
+      
+      
+      
    }
 
    void flagNamespaceDeclarations()

@@ -9,6 +9,7 @@ import junit.framework.TestCase;
 import org.xml.sax.EntityResolver;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+import org.xmlmiddleware.schemas.dtds.Attribute;
 import org.xmlmiddleware.schemas.dtds.DTD;
 import org.xmlmiddleware.schemas.dtds.DTDParser;
 import org.xmlmiddleware.schemas.dtds.ElementType;
@@ -338,6 +339,34 @@ public class DTDParserTest extends TestCase
       fail();
     }
   }
+  
+  public void testTestPE3DTD()
+  {
+    DTD dtd = null;
+    String nameofCurrMethod = new Exception().getStackTrace()[0].getMethodName();
+    
+    InputStream is = getClass().getClassLoader().getResourceAsStream("res/testPE3.dtd");
+    
+    DTDParser dtdParser = new DTDParser();
+    
+    InputSource input = new InputSource(is);
+    try
+    {
+      Hashtable namespacesURI = new Hashtable();
+      namespacesURI.put("epub", "http://www.idpf.org/2007/ops");
+      dtd = dtdParser.parseExternalSubset(input, namespacesURI, new localEntityResolver());
+      XMLName elementName = XMLName.create(null, "h1");
+      ElementType el = dtd.elementTypes.get(elementName);
+      XMLName epubTypeAttr = XMLName.create("http://www.idpf.org/2007/ops", "type", "epub"); 
+      Attribute attr = el.attributes.get(epubTypeAttr);
+      assertNotNull(attr);
+    } catch (Exception e)
+    {
+      e.printStackTrace();
+      fail();
+    }
+  }
+  
 
   public void testXMLDBMS2DTD()
   {

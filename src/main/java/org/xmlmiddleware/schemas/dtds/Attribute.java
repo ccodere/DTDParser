@@ -71,6 +71,23 @@ public class Attribute
 
    /** Notation attribute type. */
    public static final int TYPE_NOTATION = 10;
+   
+   // Internal mapping to string   
+   private static final String TYPE_MAPPING[] =
+   {
+     "''",           // 0: TYPE_UNKNOWN
+     "CDATA",       // 1: TYPE_CDATA
+     "ID",          // 2: TYPE_ID
+     "IDREF",       // 3: TYPE_IDREF
+     "IDREFS",      // 4: TYPE_IDREFS
+     "ENTITY",      // 5: TYPE_ENTITY
+     "ENTITIES",    // 6: TYPE_ENTITIES
+     "NMTOKEN",     // 7: TYPE_NMTOKEN
+     "NMTOKENS",    // 8: TYPE_NMTOKENS
+     "Enumerated",  // 9: TYPE_ENUMERATED
+     "NOTATION"    // 10: TYPE_NOTATION
+   };
+   
 
    /** Default type unknown. */
    public static final int REQUIRED_UNKNOWN = 0;
@@ -86,6 +103,16 @@ public class Attribute
 
    /** Attribute is optional and has a default. Corresponds to "&lt;default&gt;". */
    public static final int REQUIRED_DEFAULT = 4;
+   
+   // Internal mapping to string   
+   private static final String REQUIRED_MAPPING[] =
+   {
+     "''",          // 0: REQUIRED_UNKNOWN
+     "REQUIRED",    // 1: REQUIRED_REQUIRED
+     "OPTIONAL",    // 2: REQUIRED_OPTIONAL
+     "DEFAULT",     // 3: REQUIRED_FIXED
+     "DEFAULT",     // 4: REQUIRED_FIXED
+   };
 
    // ********************************************************************
    // Variables
@@ -145,4 +172,12 @@ public class Attribute
    {
       this.name = name;
    }
+
+  public String toString()
+  {
+    return "[type=" + TYPE_MAPPING[type] + ", required=" + REQUIRED_MAPPING[required] + "]";
+  }
+
+   
+   
 }

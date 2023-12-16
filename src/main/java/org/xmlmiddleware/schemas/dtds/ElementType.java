@@ -134,4 +134,11 @@ public class ElementType
    {
       this.name = name;
    }
+
+  public String toString()
+  {
+    return "ElementType [name=" + name + ", attributes=" + attributes + "]";
+  }
+   
+   
 }

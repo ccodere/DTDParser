@@ -1,0 +1,44 @@
+<!-- a Uniform Resource Identifier, see [URI] -->
+<!ENTITY % URI.datatype "CDATA" >
+
+<!ENTITY % EPUB.xmlns  "http://www.idpf.org/2007/ops" >
+
+
+<!ENTITY % EPUB.prefixed "INCLUDE" >
+
+
+<!ENTITY % EPUB.prefix  "epub" >
+
+<!-- 4. Declare parameter entities (eg., %MODULE.pfx;) containing the
+        colonized prefix(es) (eg., '%MODULE.prefix;:') used when
+        prefixing is active, an empty string when it is not.
+-->
+<!ENTITY % EPUB.pfx  "%EPUB.prefix;:" >
+
+<!-- 5. The parameter entity %MODULE.xmlns.extra.attrib; may be
+        redeclared to contain any non-Module namespace declaration
+        attributes for namespaces embedded in Module. When prefixing
+        is active it contains the prefixed xmlns attribute and any
+        namespace declarations embedded in Module, otherwise an empty
+        string.
+-->
+<![%EPUB.prefixed;[
+<!ENTITY % EPUB.xmlns.extra.attrib
+      "xmlns:%EPUB.prefix; %URI.datatype;   #FIXED '%EPUB.xmlns;'" >
+]]>
+<!ENTITY % EPUB.xmlns.extra.attrib "" >
+
+<!ENTITY % XHTML.xmlns.extra.attrib
+      "%EPUB.xmlns.extra.attrib;"
+>
+
+
+<!ENTITY % EPUB.global.type.attrib
+     "%EPUB.prefix;:type        CDATA                 #IMPLIED"
+>
+
+<!ELEMENT h1 ANY>
+
+<!ATTLIST h1 %EPUB.global.type.attrib;
+>
+   

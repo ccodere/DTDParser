@@ -958,5 +958,24 @@ public class XMLName
          checkLocalName(universalName.substring(separator + 1), true);
       }
    }
+
+  /** This implementation represents a QName as: "{" + Namespace URI + "}" + local part (James Clark notation). 
+   *  If the Namespace URI is null, only the local part is returned. 
+   */
+  public String toString()
+  {
+    if ((uri == null) || (uri.length()==0))
+    {
+      return local;
+    } else
+    {
+      return "{"+uri+"}"+local;
+    }
+    
+  }
+  
+  
+   
+   
 }
 
