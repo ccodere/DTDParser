@@ -25,7 +25,7 @@ import org.xml.sax.*;
  * creates one property for each attribute and one property for each child
  * element. The data types of the properties are String (for attributes and
  * simple children) and class references (for complex children). Each class is
- * written to a file named &lt;element-type>.java.
+ * written to a file named &lt;element-type&gt;.java.
  * </p>
  *
  * <p>
@@ -33,12 +33,11 @@ import org.xml.sax.*;
  * </p>
  *
  * <pre>
- *    java ClassGenerator &lt;dtd-file>
+ *    java ClassGenerator &lt;dtd-file\&gt;
  * </pre>
  *
  * @author Ronald Bourret
  */
-
 public class ClassGenerator
 {
   //**************************************************************************

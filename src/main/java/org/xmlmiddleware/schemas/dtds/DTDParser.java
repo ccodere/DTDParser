@@ -67,17 +67,17 @@ import java.util.*;
  *    &lt;!-- This is the main module for a DTD for books. The Book element type is
  *         declared in this module. The declarations for the element types used in
  *         the title pages, chapters, and appendices are in separate modules. These
- *         are included through parameter entity references. -->
+ *         are included through parameter entity references. --&gt;
  *
- *    &lt;!ELEMENT Book (Title, Chapter+, Appendix*)>
+ *    &lt;!ELEMENT Book (Title, Chapter+, Appendix*)&gt;
  *
- *    &lt;!ENTITY % TitleDeclarations "titledeclarations.dtd">
+ *    &lt;!ENTITY % TitleDeclarations "titledeclarations.dtd"&gt;
  *    %TitleDeclarations;
  *
- *    &lt;!ENTITY % ChapterDeclarations "chapterdeclarations.dtd">
+ *    &lt;!ENTITY % ChapterDeclarations "chapterdeclarations.dtd"&gt;
  *    %ChapterDeclarations;
  *
- *    &lt;!ENTITY % AppendixDeclarations "appendixdeclarations.dtd">
+ *    &lt;!ENTITY % AppendixDeclarations "appendixdeclarations.dtd"&gt;
  *    %AppendixDeclarations;
  * </pre>
  *
@@ -137,13 +137,13 @@ import java.util.*;
  * case. To see why, consider the following DTD:</p>
  *
  * <pre>
- *    &lt;!ELEMENT a:A (b:B?)>
+ *    &lt;!ELEMENT a:A (b:B?&gt;
  *    &lt;!ATTLIST a:A
- *              xmlns:a #FIXED "http://www.a.org">
- *    &lt;!ELEMENT b:B (a:A?)>
+ *              xmlns:a #FIXED "http://www.a.org"&gt;
+ *    &lt;!ELEMENT b:B (a:A?)&gt;
  *    &lt;!ATTLIST b:B
  *              xmlns:a #FIXED "http://www.a.org"
- *              xmlns:b #FIXED "http://www.b.org"> 
+ *              xmlns:b #FIXED "http://www.b.org"&gt;
  * </pre>
  *
  * <p>Notice that this DTD forms a cycle. That is, a:A contains b:B which contains a:A. Because
@@ -252,6 +252,8 @@ public class DTDParser
    *              Thrown if a system ID is malformed.
    * @exception IOException
    *              Thrown if an I/O error occurs.
+   * @exception URISyntaxException
+   *              Thrown if the URI of the resolver is invalid.             
    */
   public DTD parseXMLDocument(InputSource src, Hashtable namespaceURIs,
       EntityResolver entityResolver)
@@ -302,6 +304,7 @@ public class DTDParser
    * @exception IOException
    *              Thrown if an I/O error occurs.
    * @throws URISyntaxException
+   *              Thrown in the URI syntax is invalid
    */
   public DTD parseExternalSubset(InputSource src, Hashtable namespaceURIs,
       EntityResolver entityResolver)

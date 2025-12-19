@@ -428,6 +428,7 @@ public class XMLName
     * @param prefixes Hashtable containing namespace URIs as keys and prefixes as
     *    values. If the universal name does not contain a caret, this may be null.
     *    Use an empty string ("") for the prefix of the default namespace.
+    * @return The qualified name
     * @exception IllegalArgumentException Thrown if no prefix corresponding to the
     *    namespace URI was found.
     */
@@ -461,6 +462,7 @@ public class XMLName
     *
     * @param uri The namespace URI.
     * @param localName The local name. May not contain a colon.
+    * @return The universal name
     */
    public static String getUniversalName(String uri, String localName)
    {
@@ -478,6 +480,7 @@ public class XMLName
     * @param qualifiedName Qualified name. Not required to contain a prefix.
     * @param uris Hashtable containing prefixes as keys and namespace URIs as
     *   values.
+    * @return The universal name
     * @exception IllegalArgumentException Thrown if no URI corresponding to the
     *    prefix was found.
     */

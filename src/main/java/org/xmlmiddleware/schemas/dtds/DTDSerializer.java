@@ -86,6 +86,8 @@ public class DTDSerializer
     * @param dtd The DTD.
     * @param writer The Writer.
     * @param pretty Whether to perform pretty printing.
+    * @throws IOException
+    *      Throws on I/O error serializing the data
     */
    public void serialize(DTD dtd, Writer writer, boolean pretty)
       throws IOException

@@ -60,7 +60,10 @@ public class ParameterEntity extends Entity
       this.type = Entity.TYPE_PARAMETER;
    }
 
-   /** Construct a ParameterEntity and set its name. */
+   /** Construct a ParameterEntity and set its name.
+    * 
+    *  @param name The name of the parameter entity
+    * */
    public ParameterEntity(String name)
    {
       super(name);
