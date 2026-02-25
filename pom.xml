@@ -212,85 +212,6 @@
 				<build.target>${maven.compiler.target}</build.target>
 			</properties>
 		</profile>
-		<profile>
-			<!-- When this profile is activated, it builds for JDK1.4 class format, 
-				it also checks with Animal sniffer for methods and classes not present in 
-				some profiles (CDC FP, JDK1.4, etc.) -->
-			<id>jdk14</id>
-			<properties>
-				<maven.compiler.source>1.5</maven.compiler.source>
-				<maven.compiler.target>1.5</maven.compiler.target>
-				<version.retrotranslator-transformer>1.2.9</version.retrotranslator-transformer>
-				<jar.classifier>jdk14</jar.classifier>
-				<project.build.directory.classes>${project.build.directory}/classes-jdk15</project.build.directory.classes>
-				<project.build.outputDirectory.retrotranslated14>${project.build.directory}/classes-jdk14</project.build.outputDirectory.retrotranslated14>
-				<project.build.outputDirectory.classes.jar>${project.build.outputDirectory.retrotranslated14}</project.build.outputDirectory.classes.jar>
-				<build.target>1.4</build.target>
-			</properties>
-			<build>
-				<plugins>
-					<plugin>
-						<groupId>org.apache.maven.plugins</groupId>
-						<artifactId>maven-antrun-plugin</artifactId>
-						<version>1.8</version>
-						<executions>
-							<execution>
-								<id>retrotranslated14</id>
-								<phase>process-classes</phase>
-								<goals>
-									<goal>run</goal>
-								</goals>
-								<configuration>
-									<target>
-										<taskdef name="retrotranslator"
-											classname="net.sf.retrotranslator.transformer.RetrotranslatorTask"
-											classpathref="maven.plugin.classpath" />
-										<mkdir dir="${project.build.outputDirectory.retrotranslated14}" />
-										<retrotranslator srcdir="${project.build.outputDirectory}"
-											destdir="${project.build.outputDirectory.retrotranslated14}"
-											failonwarning="true" smart="true" stripannot="true"
-											stripsign="true" syncvolatile="true" target="1.4" verbose="true"
-											verify="false">
-										</retrotranslator>
-									</target>
-								</configuration>
-							</execution>
-						</executions>
-						<dependencies>
-							<dependency>
-								<groupId>net.sf.retrotranslator</groupId>
-								<artifactId>retrotranslator-transformer</artifactId>
-								<version>1.2.9</version>
-							</dependency>
-						</dependencies>
-					</plugin>
-
-					<!-- Permits to check against CDC FP 1.1 with JSR 280 API compatibility -->
-					<plugin>
-						<groupId>org.codehaus.mojo</groupId>
-						<artifactId>animal-sniffer-maven-plugin</artifactId>
-						<version>1.8</version>
-						<configuration>
-							<signature>
-								<groupId>com.optimasc.signatures</groupId>
-								<artifactId>cdc11fpxml</artifactId>
-								<version>1.0-SNAPSHOT</version>
-							</signature>
-							<outputDirectory>${project.build.outputDirectory.retrotranslated14}</outputDirectory>
-						</configuration>
-						<executions>
-							<execution>
-								<id>retrotranslated14</id>
-								<phase>process-classes</phase>
-								<goals>
-									<goal>check</goal>
-								</goals>
-							</execution>
-						</executions>
-					</plugin>
-				</plugins>
-			</build>
-		</profile>
 	</profiles>
 
 
@@ -302,17 +223,6 @@
 			<scope>test</scope>
 		</dependency>
 	</dependencies>
-
-	<dependencyManagement>
-		<dependencies>
-			<dependency>
-				<groupId>net.sf.retrotranslator</groupId>
-				<artifactId>retrotranslator-transformer</artifactId>
-				<version>${version.retrotranslator-transformer}</version>
-			</dependency>
-		</dependencies>
-	</dependencyManagement>
-
 
 	<build>
 		<outputDirectory>${project.build.directory.classes}</outputDirectory>
